@@ -1,0 +1,990 @@
+{UTF-8}
+tasa adopción=
+	(Efecto de paridad de red en hogares dispuestos a adoptar*1.25)*(Hogares potenciales\
+		*Efecto de publicidad+Tasa de contacto*Fraccion de adopcion*Hogares potenciales*Household PV adopters
+	/(Household PV adopters+Hogares potenciales))
+	~	
+	~	('Hogares potenciales adoptadores'*p +(q-p)*('Hogares Adoptadores') - \
+		q/'Hogares potenciales adoptadores' * ('Hogares Adoptadores') ^2 )
+	|
+
+Impuesto de emisión=
+	1
+	~	
+	~		|
+
+Restriccion movilidad=
+	1
+	~	
+	~	https://www.carroya.com/noticias/guia-para-conductores/conoce-cuales-vehicu\
+		los-estan-exentos-del-pico-y-placa-en-bogota-4507
+	|
+
+Incentivo vehículo electico=
+	1
+	~	
+	~		|
+
+LCOE panel = WITH LOOKUP (
+	Time,
+		([(0,0)-(300,300)],(1,250),(79.8165,184.211),(133.945,157.895),(174.312,151.316),(190.826\
+		,155.263),(203.67,152.632),(213.761
+		,148.684),(222.936,148.684),(233.945,148.684),(243.119,148.684),(257.798,146.053),(\
+		268.807,146.053),(277.982,146.053),(283.486
+		,143.421),(300,136.842),(300,135) ))
+	~	
+	~	https://www.eia.gov/outlooks/aeo/pdf/electricity_generation.pdf
+	|
+
+cociente paridad de red=
+	((precio de electricidad/(LCOE panel))*Panel price)/10
+	~	
+	~		|
+
+Panel price=
+	2
+	~	
+	~		|
+
+Residential Electricity Demand=
+	Demanda residencial total/1e+06
+	~	GWh/yr
+	~		|
+
+publicidad=
+	IF THEN ELSE(Escenarios=1, 0.8 , IF THEN ELSE(Escenarios=2, 1 , IF THEN ELSE(Escenarios\
+		=3, 1.2 
+	, 0.8 ) ) )
+	~	
+	~		|
+
+Efecto de publicidad=
+	0.01*publicidad
+	~	
+	~		|
+
+Tamaño panel=
+	IF THEN ELSE(Escenarios=1 :OR: Escenarios=4, 2.5, 2.5 )
+	~	
+	~	2.5
+	|
+
+Escenario tecnologia=
+	IF THEN ELSE( Escenarios=1 :OR: Escenarios= 4 , 1 , 2 )
+	~	
+	~		|
+
+Escenarios=
+	4
+	~	
+	~		|
+
+Demanta total de energia=
+	max(0,Demanda-Generacion total paneles)
+	~	
+	~		|
+
+desecho de vehículos eléctricos=
+	Electric Vehicles/Tiempo de vida vehículo
+	~	
+	~		|
+
+desecho vehículos convencionales=
+	vehículos convencionales en uso/Tiempo de vida vehículo combustion
+	~	
+	~		|
+
+Costo de operación y mantenimiento vehículo eléctrico=
+	Costo de cada km recorrido en un vehículo eléctrico*km promedio por año por vehículo\
+		*Tiempo de vida vehículo
+	~	
+	~		|
+
+Demanda residencial total=
+	Demanda residencial hogares potenciales+Demanda residencial adaptadores+Demanda residencial hogares no potenciales ni adaptadores\
+		+Demanda electricidad vehiculos electricos
+	~	
+	~		|
+
+Tiempo de vida vehículo combustion=
+	IF THEN ELSE(Escenario chatarrización=1, 25 , 15 )
+	~	
+	~		|
+
+Escenario chatarrización=
+	2
+	~	
+	~		|
+
+costo de vida de vehículo convencional=
+	Costo de cada km recorrido en un vehículo convencional*km promedio por año por vehículo\
+		*Tiempo de vida vehículo
+	~	
+	~		|
+
+Precio vehículo eléctrico = WITH LOOKUP (
+	Time,
+		([(0,0)-(2040,3.40282e+38)],(2020,1e+08),(2022,8.5e+07),(2025,7.3e+07),(2030,6.5e+07\
+		),(2035,6e+07),(2040,5.5e+07) ))
+	~	
+	~		|
+
+Costos totales vehículos eléctricos=
+	Costo de operación y mantenimiento vehículo eléctrico+Precio vehículo eléctrico\
+		*Incentivo vehículo electico
+	~	
+	~		|
+
+precio litro de gasolina=
+	Impuesto de emisión*9030/3.78541
+	~	
+	~		|
+
+Atractividad relativa de vehículos eléctricos=
+	(Costos totales vehículos convencioanles/(Costos totales vehículos eléctricos+Costos totales vehículos convencioanles
+	))*Conocimiento*Relacion estaciones de carga/Restriccion movilidad
+	~	
+	~		|
+
+Capacidad a construir=
+	DELAY3(Inicio capacidad a construir, Tiempo promedio construccion)+IF THEN ELSE(Time\
+		=2022, 7/0.125, 0 )
+	~	
+	~		|
+
+Demanda electricidad vehiculos electricos=
+	Electric Vehicles*km promedio por año por vehículo*kWh requeridos en bateria/capacidad de km a recorrer con bateria
+	~	
+	~		|
+
+Factor de disponibilidad=
+	IF THEN ELSE(Time<=2023, 0.5 , 0.5 )
+	~	
+	~		|
+
+Factor de emision=
+	IF THEN ELSE(Time<=2023, 130 , 130 )
+	~	
+	~		|
+
+Emisiones sector electrico=
+	Demanta total de energia*Factor de emision
+	~	
+	~		|
+
+CO2 Emissions=
+	Emisiones sector electrico+Emisiones vehículos
+	~	Ton
+	~		|
+
+Margen=
+	(energía-(Demanta total de energia))/(Demanta total de energia)
+	~	
+	~		|
+
+Conocimiento=
+	IF THEN ELSE(Escenario tecnologia=1, Conocimiento de la tecnología , escenario publicidad\
+		 )
+	~	
+	~		|
+
+energía=
+	Capacidad construida*Factor de disponibilidad*360*24
+	~	
+	~		|
+
+Emision por km=
+	Emision por litro*Litros de gasolina necesarios para recorres 1 km
+	~	
+	~		|
+
+Emisiones vehículos=
+	Emision por km*km promedio por año por vehículo*vehículos convencionales en uso/1000
+	~	mton
+	~		|
+
+escenario publicidad = WITH LOOKUP (
+	Time,
+		([(2020,0)-(2060,1)],(2020,0.2),(2021,0.25),(2022,0.3),(2023,0.35),(2024,0.4),(2025\
+		,0.5),(2026,0.6),(2027,0.7),(2028,0.88),(2029,0.9),(2030,1),(2031,1),(2040,1),(2050\
+		,1),(2060,1),(2522.94,1) ))
+	~	
+	~	https://ieeexplore.ieee.org/abstract/document/7001717
+	|
+
+Emision por litro=
+	2.3
+	~	kg/l
+	~	https://forococheselectricos.com/2020/02/cuanto-contamina-extraer-petroleo-\
+		y-convertirlo-en-gasolina-o-diesel.html#: \
+		:text=Dicho%20de%20otra%20forma%2C%20un,consumo%20de%20combustible%20es%20i\
+		nferior).
+	|
+
+Atractividad de vehículos convencionales=
+	1-Atractividad relativa de vehículos eléctricos
+	~	
+	~		|
+
+demanda de vehículos=
+	desecho de vehículos eléctricos+desecho vehículos convencionales+vehículos totales\
+		*Tasa de crecimiendo vehículos
+	~	
+	~		|
+
+capacidad de km a recorrer con bateria = WITH LOOKUP (
+	Time,
+		([(0,0)-(3000,300)],(2020,160),(2025,180),(2030,200),(2040,250) ))
+	~	
+	~	https://www-sciencedirect-com.ezproxy.unal.edu.co/science/article/pii/S0306\
+		261919312711
+	|
+
+Relacion estaciones de carga=
+	min(Estaciones de carga/Estaciones de gasolina,1)
+	~	
+	~		|
+
+Estaciones de carga= INTEG (
+	Crecimiento estaciones de carga,
+		202)
+	~	
+	~	https://www.larepublica.co/economia/colombia-el-tercer-pais-de-la-region-co\
+		n-mas-estaciones-de-carga-publicas-y-privadas-3370038
+	|
+
+Inicio capacidad a construir=
+	IF THEN ELSE(Time<2024, 0 , capacidad construcción promedio*Efecto precio en capacidad a construir\
+		 )
+	~	
+	~		|
+
+Conocimiento de la tecnología = WITH LOOKUP (
+	Time,
+		([(2020,0)-(2060,1)],(2020,0.2),(2021,0.2),(2022,0.22),(2023,0.3),(2024,0.35),(2025\
+		,0.4),(2026,0.42),(2027,0.5),(2028,0.6),(2029,0.64),(2030,0.7),(2031,0.9),(2040,0.9\
+		),(2050,1),(2060,1),(2522.94,1) ))
+	~	
+	~	https://ieeexplore.ieee.org/abstract/document/7001717
+	|
+
+kWh requeridos en bateria=
+	24
+	~	
+	~	https://puntoycarga.com/punto-de-recarga/kw-bateria-coche-electrico/
+	|
+
+Costo de cada km recorrido en un vehículo convencional=
+	Litros de gasolina necesarios para recorres 1 km*precio litro de gasolina
+	~	
+	~		|
+
+Costo de cada km recorrido en un vehículo eléctrico=
+	precio de electricidad*kWh requeridos en bateria/capacidad de km a recorrer con bateria
+	~	$
+	~		|
+
+Litros de gasolina necesarios para recorres 1 km=
+	1/7.5
+	~	
+	~		|
+
+vehículos convencionales en uso= INTEG (
+	venta de vehículos convencionales-desecho vehículos convencionales,
+		6.19e+06)
+	~	carros
+	~		|
+
+Costos totales vehículos convencioanles=
+	costo de vida de vehículo convencional+Precio vehículos convencionales
+	~	
+	~		|
+
+Crecimiento estaciones de carga=
+	max(Estaciones de carga necesarias-Estaciones de carga,0)
+	~	
+	~		|
+
+Tasa de crecimiendo vehículos = WITH LOOKUP (
+	Time,
+		([(0,0)-(3000,10)],(2020,0.021),(2025,0.015),(2030,0.01),(2035,0.005),(2040,0),(2050\
+		,0) ))
+	~	
+	~	Se tiene en cuenta el crecimiento poblacional y se espera que la población deje de \
+		crecer entre el 2040 y 2050
+		Dane
+	|
+
+Tiempo de vida vehículo=
+	8.3
+	~	
+	~	Información tomada del promedio (ver archivo de excel)
+	|
+
+Precio vehículos convencionales=
+	9.2e+07
+	~	
+	~	https://www.larepublica.co/empresas/precio-promedio-de-los-usados-crecio-33\
+		-21-segun-reporte-de-mercado-libre-vis-3297096
+	|
+
+Estaciones necesarias=
+	0.033
+	~	
+	~		|
+
+Venta de vehículos eléctricos=
+	Atractividad relativa de vehículos eléctricos*demanda de vehículos
+	~	
+	~		|
+
+Estaciones de carga necesarias=
+	Estaciones necesarias*Electric Vehicles
+	~	
+	~		|
+
+vehículos totales=
+	vehículos convencionales en uso+Electric Vehicles
+	~	
+	~	El dato de los carros se toma de \
+		https://www.eltiempo.com/economia/sectores/colombia-en-cifras-segun-el-regi\
+		stro-unico-nacional-de-transito-455152
+	|
+
+Estaciones de gasolina=
+	10000
+	~	
+	~		|
+
+Electric Vehicles= INTEG (
+	Venta de vehículos eléctricos-desecho de vehículos eléctricos,
+		7537)
+	~	Numbers of cars
+	~	https://caracol.com.co/radio/2022/04/05/economia/1649195552_552385.html
+	|
+
+km promedio por año por vehículo=
+	24000
+	~	
+	~	https://www.autofact.cl/blog/comprar-auto/antecedentes/kilometraje-promedio\
+		-auto
+	|
+
+venta de vehículos convencionales=
+	demanda de vehículos*Atractividad de vehículos convencionales
+	~	
+	~		|
+
+capacidad construcción promedio=
+	2
+	~	
+	~		|
+
+Capacidad construida= INTEG (
+	Capacidad a construir-Capacidad obsoleta,
+		17.5)
+	~	
+	~		|
+
+Capacidad en construccion= INTEG (
+	Inicio capacidad a construir-Capacidad a construir,
+		10)
+	~	
+	~		|
+
+Capacidad obsoleta=
+	Capacidad construida/promedio de vida
+	~	
+	~		|
+
+Capacidad solar=
+	Household PV adopters*Tamaño panel/1000
+	~	MW
+	~		|
+
+Demanda= INTEG (
+	variacion en la demanda,
+		66000)
+	~	
+	~		|
+
+Efecto precio en capacidad a construir = WITH LOOKUP (
+	precio,
+		([(0,0)-(400,2.5)],(0,0),(170,0),(170.031,1),(250,1),(250,1.5),(350,1.5),(350,2),(400\
+		,2) ))
+	~	
+	~		|
+
+Efecto precio en incremento demanda = WITH LOOKUP (
+	precio,
+		([(0,0.7)-(400,1.5)],(0,1.25),(29.3578,1.22281),(31.8043,1.20877),(59.9388,1.11404)\
+		,(69.7248,1.05088),(80.01,1),(112.538,0.931579),(130.01,0.9),(179.817,0.892982),(211.621\
+		,0.861404),(232.416,0.836842),(248.318,0.829825),(266.667,0.822807),(313.15,0.801754\
+		),(400,0.8) ))
+	~	
+	~		|
+
+incremento promedio de la demanda=
+	0.03
+	~	
+	~		|
+
+Tiempo promedio construccion=
+	4
+	~	
+	~		|
+
+variacion en la demanda=
+	Demanda*incremento promedio de la demanda*Efecto precio en incremento demanda
+	~	
+	~		|
+
+Generacion total paneles=
+	Generación solar panel hogar*Household PV adopters/1e+06
+	~	
+	~		|
+
+promedio de vida=
+	20
+	~	
+	~		|
+
+precio de electricidad=
+	Cargo distribución+otros cargos+precio
+	~	
+	~		|
+
+precio = WITH LOOKUP (
+	Margen,
+		([(-1,0)-(2,800)],(-0.08,800),(0,500),(0.201,450),(0.4,300),(0.401,250),(0.6,200),(\
+		0.601,150),(0.8,125),(0.8001,100),(1,100) ))
+	~	
+	~		|
+
+Consumo por hogar=
+	200*12
+	~	
+	~		|
+
+Demanda residencial hogares no potenciales ni adaptadores=
+	(Hogares-Household PV adopters-Hogares potenciales)*Consumo por hogar
+	~	
+	~		|
+
+Demanda residencial adaptadores=
+	(Consumo por hogar-Generación solar panel hogar)*Household PV adopters
+	~	
+	~		|
+
+otros cargos=
+	200
+	~	
+	~		|
+
+Fraccion de adopcion=
+	1
+	~	
+	~		|
+
+Hogares dispuestos a adoptar=
+	(Hogares-Hogares potenciales-Household PV adopters)*(Efecto de paridad de red en hogares dispuestos a adoptar\
+		)
+	~	
+	~		|
+
+Costo fijo=
+	(2.09632e+11)*12
+	~	
+	~		|
+
+crecimiento neto=
+	Población*tasa crecimiento
+	~	
+	~		|
+
+Demanda residencial hogares potenciales=
+	Consumo por hogar*Hogares potenciales
+	~	
+	~		|
+
+Días en mes=
+	360
+	~	
+	~		|
+
+Efecto de paridad de red en hogares dispuestos a adoptar = WITH LOOKUP (
+	cociente paridad de red,
+		([(0,0)-(10,10)],(0,1),(0.5,0.7),(0.7,0.6),(0.8,0.5),(1,0.25) ))
+	~	
+	~		|
+
+Generación solar panel hogar=
+	Días en mes*Horas sol*Tamaño panel
+	~	
+	~		|
+
+Hogares=
+	Población/personas por hogar
+	~	
+	~		|
+
+Household PV adopters= INTEG (
+	tasa adopción,
+		100)
+	~	Number of Households
+	~		|
+
+Población= INTEG (
+	crecimiento neto,
+		4.95e+07)
+	~	
+	~		|
+
+Hogares potenciales= INTEG (
+	tasa crecimiento hogares potenciales-tasa adopción,
+		3)
+	~	
+	~		|
+
+Horas sol=
+	4.8
+	~	
+	~	Dato tomado de Data de IDEAM \
+		http://atlas.ideam.gov.co/basefiles/6.Anexo_Promedios-mensuales-de-brillo-s\
+		olar.pdf
+	|
+
+personas por hogar=
+	3.1
+	~	
+	~	Información tomada de: \
+		https://www.dane.gov.co/index.php/estadisticas-por-tema/demografia-y-poblac\
+		ion/censo-nacional-de-poblacion-y-vivenda-2018/como-vivimos
+	|
+
+Tasa de contacto=
+	0.025
+	~	
+	~		|
+
+tasa crecimiento hogares potenciales=
+	Hogares dispuestos a adoptar
+	~	
+	~		|
+
+tasa crecimiento=
+	0.0117/12
+	~	
+	~		|
+
+Cargo distribución=
+	Costo fijo/Demanda residencial total
+	~	
+	~		|
+
+********************************************************
+	.Control
+********************************************************~
+		Simulation Control Parameters
+	|
+
+FINAL TIME  = 2050
+	~	Year
+	~	The final time for the simulation.
+	|
+
+INITIAL TIME  = 2024
+	~	Year
+	~	The initial time for the simulation.
+	|
+
+SAVEPER  = 
+        TIME STEP
+	~	Year [0,?]
+	~	The frequency with which output is stored.
+	|
+
+TIME STEP  = 0.125
+	~	Year [0,?]
+	~	The time step for the simulation.
+	|
+
+\\\---/// Sketch information - do not modify anything except names
+V300  Do not put anything below this section - it will be ignored
+*View 1
+$192-192-192,0,Times New Roman|12||0-0-0|0-0-0|0-0-255|-1--1--1|-1--1--1|96,96,85,0
+10,1,Hogares potenciales,553,208,40,20,3,3,0,0,0,0,0,0,0,0,0,0,0,0
+10,2,Household PV adopters,802,201,42,22,3,131,0,0,0,0,0,0,0,0,0,0,0,0
+1,3,5,2,4,0,0,22,0,0,0,-1--1--1,,1|(716,207)|
+1,4,5,1,100,0,0,22,0,0,0,-1--1--1,,1|(625,207)|
+11,5,0,665,207,8,8,34,3,0,0,1,0,0,0,0,0,0,0,0,0
+10,6,tasa adopción,665,245,75,30,40,3,0,0,-1,0,0,0,0,0,0,0,0,0
+10,7,Consumo por hogar,237,498,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+10,8,Demanda residencial hogares potenciales,429,408,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,9,7,8,1,0,0,0,0,64,0,-1--1--1,,1|(281,395)|
+1,10,1,8,1,0,0,0,0,64,0,-1--1--1,,1|(460,280)|
+10,11,Generación solar panel hogar,977,367,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+10,12,Demanda residencial adaptadores,881,456,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,13,11,12,1,0,0,0,0,64,0,-1--1--1,,1|(942,424)|
+1,14,2,12,1,0,0,0,0,64,0,-1--1--1,,1|(890,303)|
+10,15,Demanda residencial total,585,563,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,16,8,15,1,0,0,0,0,64,0,-1--1--1,,1|(441,502)|
+1,17,12,15,1,0,0,0,0,64,0,-1--1--1,,1|(760,555)|
+10,18,Costo fijo,860,727,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+10,19,Cargo distribución,778,654,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,20,15,19,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+1,21,18,19,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+10,22,Horas sol,922,183,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+10,23,Tamaño panel,1061,300,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+10,24,Días en mes,1109,395,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,25,22,11,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+1,26,23,11,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+1,27,24,11,1,0,0,0,0,64,0,-1--1--1,,1|(1056,391)|
+10,28,Efecto de publicidad,613,146,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+10,29,Tasa de contacto,729,147,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,30,28,6,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+1,31,29,6,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+1,32,1,6,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+1,33,2,6,1,0,0,0,0,64,0,-1--1--1,,1|(749,247)|
+10,34,Población,440,-49,40,20,3,3,0,0,0,0,0,0,0,0,0,0,0,0
+12,35,48,290,-56,10,8,0,3,0,0,-1,0,0,0,0,0,0,0,0,0
+1,36,38,34,4,0,0,22,0,0,0,-1--1--1,,1|(374,-56)|
+1,37,38,35,100,0,0,22,0,0,0,-1--1--1,,1|(316,-56)|
+11,38,0,341,-56,8,8,34,3,0,0,1,0,0,0,0,0,0,0,0,0
+10,39,crecimiento neto,341,-18,75,30,40,3,0,0,-1,0,0,0,0,0,0,0,0,0
+10,40,tasa crecimiento,340,24,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,41,40,39,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+1,42,34,39,1,0,0,0,0,64,0,-1--1--1,,1|(397,-6)|
+10,43,personas por hogar,625,-57,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+10,44,Hogares,544,-9,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,45,43,44,1,0,0,0,0,64,0,-1--1--1,,1|(562,-24)|
+1,46,34,44,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+12,47,48,369,203,10,8,0,3,0,0,-1,0,0,0,0,0,0,0,0,0
+1,48,50,1,4,0,0,22,0,0,0,-1--1--1,,1|(471,203)|
+1,49,50,47,100,0,0,22,0,0,0,-1--1--1,,1|(396,203)|
+11,50,0,422,203,8,8,34,3,0,0,1,0,0,0,0,0,0,0,0,0
+10,51,tasa crecimiento hogares potenciales,422,241,75,30,40,3,0,0,-1,0,0,0,0,0,0,0,0,0
+10,52,Hogares dispuestos a adoptar,641,82,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,53,1,52,1,0,0,0,0,64,0,-1--1--1,,1|(550,139)|
+1,54,2,52,1,0,0,0,0,64,0,-1--1--1,,1|(777,120)|
+1,55,44,52,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+10,56,Efecto de paridad de red en hogares dispuestos a adoptar,893,91,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+10,57,precio de electricidad,1025,555,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,58,19,57,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+10,59,otros cargos,1034,711,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,60,59,57,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+1,61,52,51,1,0,0,0,0,64,0,-1--1--1,,1|(489,103)|
+1,62,56,52,1,0,0,0,0,64,0,-1--1--1,,1|(757,40)|
+10,63,cociente paridad de red,1316,312,53,19,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,64,57,63,1,0,0,0,0,64,0,-1--1--1,,1|(1210,459)|
+10,65,LCOE panel,1361,507,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,66,65,63,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+10,67,Demanda residencial hogares no potenciales ni adaptadores,604,411,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,68,67,15,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+10,69,Hogares,796,364,75,30,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+1,70,69,67,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+1,71,1,67,1,0,0,0,0,64,0,-1--1--1,,1|(589,294)|
+1,72,2,67,1,0,0,0,0,64,0,-1--1--1,,1|(741,322)|
+1,73,63,56,1,0,0,0,0,64,0,-1--1--1,,1|(1145,135)|
+10,74,Time,1373,646,75,30,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+1,75,74,65,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+10,76,Fraccion de adopcion,649,279,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,77,76,6,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+10,78,Consumo por hogar,678,499,75,30,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+1,79,78,67,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+1,80,78,12,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+10,81,precio,1202,684,75,30,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+1,82,81,57,1,0,0,0,0,64,0,-1--1--1,,1|(1142,610)|
+10,83,Capacidad solar,1837,210,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+10,84,Tamaño panel,2041,96,75,30,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+10,85,Household PV adopters,1654,95,52,19,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+1,86,85,83,1,0,0,0,0,64,0,-1--1--1,,1|(1701,174)|
+1,87,84,83,1,0,0,0,0,64,0,-1--1--1,,1|(1961,159)|
+10,88,Demanda electricidad vehiculos electricos,457,834,75,30,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+1,89,88,15,1,0,0,0,0,64,0,-1--1--1,,1|(534,711)|
+10,90,Escenarios,1149,206,75,30,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+1,91,90,23,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+10,92,Escenarios,2009,520,75,30,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+10,93,publicidad,2094,858,33,11,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,94,92,93,1,0,0,0,0,64,0,-1--1--1,,1|(2121,674)|
+10,95,publicidad,160,100,42,11,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+1,96,95,28,1,0,0,0,0,64,0,-1--1--1,,1|(386,91)|
+10,97,Residential Electricity Demand,725,803,60,19,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,98,15,97,1,0,0,0,0,64,0,-1--1--1,,1|(632,687)|
+10,99,Panel price,1528,607,36,11,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,100,99,63,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+1,101,56,6,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+\\\---/// Sketch information - do not modify anything except names
+V300  Do not put anything below this section - it will be ignored
+*View 2
+$192-192-192,0,Times New Roman|12||0-0-0|0-0-0|0-0-255|-1--1--1|-1--1--1|96,96,71,0
+10,1,Capacidad en construccion,588,207,52,27,3,131,0,0,0,0,0,0,0,0,0,0,0,0
+10,2,Capacidad construida,1033,212,43,28,3,131,0,0,0,0,0,0,0,0,0,0,0,0
+1,3,5,2,4,0,0,22,0,0,0,-1--1--1,,1|(905,212)|
+1,4,5,1,100,0,0,22,0,0,0,-1--1--1,,1|(722,212)|
+11,5,0,813,212,8,8,34,3,0,0,1,0,0,0,0,0,0,0,0,0
+10,6,Capacidad a construir,813,250,75,30,40,3,0,0,-1,0,0,0,0,0,0,0,0,0
+12,7,48,1473,201,10,8,0,3,0,0,-1,0,0,0,0,0,0,0,0,0
+1,8,10,7,4,0,0,22,0,0,0,-1--1--1,,1|(1370,201)|
+1,9,10,2,100,0,0,22,0,0,0,-1--1--1,,1|(1168,201)|
+11,10,0,1269,201,8,8,34,3,0,0,1,0,0,0,0,0,0,0,0,0
+10,11,Capacidad obsoleta,1269,239,75,30,40,3,0,0,-1,0,0,0,0,0,0,0,0,0
+10,12,Margen,1005,432,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+10,13,precio,873,403,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+10,14,Efecto precio en capacidad a construir,636,381,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+10,15,capacidad construcción promedio,296,336,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+10,16,Demanda,928,684,40,20,3,3,0,0,0,0,0,0,0,0,0,0,0,0
+12,17,48,596,684,10,8,0,3,0,0,-1,0,0,0,0,0,0,0,0,0
+1,18,20,16,4,0,0,22,0,0,0,-1--1--1,,1|(822,684)|
+1,19,20,17,100,0,0,22,0,0,0,-1--1--1,,1|(673,684)|
+11,20,0,748,684,8,8,34,3,0,0,1,0,0,0,0,0,0,0,0,0
+10,21,variacion en la demanda,748,722,75,30,40,3,0,0,-1,0,0,0,0,0,0,0,0,0
+10,22,incremento promedio de la demanda,380,541,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,23,22,21,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+1,24,16,21,1,0,0,0,0,64,0,-1--1--1,,1|(855,717)|
+1,25,12,13,1,0,0,0,0,64,0,-1--1--1,,1|(940,424)|
+1,26,13,14,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+10,27,Efecto precio en incremento demanda,608,529,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,28,13,27,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+1,29,27,21,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+12,30,48,183,208,10,8,0,3,0,0,-1,0,0,0,0,0,0,0,0,0
+1,31,33,1,4,0,0,22,0,0,0,-1--1--1,,1|(456,208)|
+1,32,33,30,100,0,0,22,0,0,0,-1--1--1,,1|(276,208)|
+11,33,0,368,208,8,8,34,3,0,0,1,0,0,0,0,0,0,0,0,0
+10,34,Inicio capacidad a construir,368,246,75,30,40,3,0,0,-1,0,0,0,0,0,0,0,0,0
+1,35,14,34,1,0,0,0,0,64,0,-1--1--1,,1|(491,351)|
+1,36,15,34,1,0,0,0,0,64,0,-1--1--1,,1|(312,285)|
+10,37,Tiempo promedio construccion,855,48,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,38,2,11,1,0,0,0,0,64,0,-1--1--1,,1|(1145,145)|
+1,39,37,6,1,0,0,0,0,64,0,-1--1--1,,1|(844,136)|
+10,40,promedio de vida,1376,80,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,41,40,11,1,0,0,0,0,64,0,-1--1--1,,1|(1345,152)|
+10,42,Household PV adopters,1303,607,75,30,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+10,43,Generacion total paneles,1212,476,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,44,42,43,1,0,0,0,0,64,0,-1--1--1,,1|(1240,548)|
+10,45,Time,625,52,75,30,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+1,46,45,6,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+10,47,energía,1148,315,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,48,2,47,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+1,49,47,12,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+10,50,Generación solar panel hogar,1351,440,75,30,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+1,51,50,43,1,0,0,0,0,64,0,-1--1--1,,1|(1280,436)|
+1,52,45,34,1,0,0,0,0,64,0,-1--1--1,,1|(483,109)|
+10,53,Factor de disponibilidad,1532,341,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,54,53,47,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+10,55,Time,1705,495,75,30,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+1,56,55,53,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+1,57,34,6,1,0,0,0,0,64,0,-1--1--1,,1|(593,287)|
+10,58,Demanta total de energia,1172,768,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,59,16,58,1,0,0,0,0,64,0,-1--1--1,,1|(1013,755)|
+1,60,43,58,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+10,61,Emisiones sector electrico,1676,795,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,62,58,61,1,0,0,0,0,64,0,-1--1--1,,1|(1413,803)|
+10,63,Factor de emision,1940,736,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,64,63,61,1,0,0,0,0,64,0,-1--1--1,,1|(1816,780)|
+1,65,55,63,1,0,0,0,0,64,0,-1--1--1,,1|(1909,664)|
+10,66,Demanda electricidad vehiculos electricos,1056,973,75,30,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+1,67,58,12,1,0,0,0,0,64,0,-1--1--1,,1|(1032,620)|
+\\\---/// Sketch information - do not modify anything except names
+V300  Do not put anything below this section - it will be ignored
+*View 3
+$192-192-192,0,Times New Roman|12||0-0-0|0-0-0|0-0-255|-1--1--1|-1--1--1|96,96,66,0
+10,1,Electric Vehicles,1410,571,67,36,3,131,0,0,0,0,0,0,0,0,0,0,0,0
+10,2,vehículos convencionales en uso,1400,918,71,32,3,131,0,0,0,0,0,0,0,0,0,0,0,0
+12,3,48,1766,563,10,8,0,3,0,0,-1,0,0,0,0,0,0,0,0,0
+1,4,6,3,4,0,0,22,0,0,0,-1--1--1,,1|(1688,563)|
+1,5,6,1,100,0,0,22,0,0,0,-1--1--1,,1|(1540,563)|
+11,6,0,1612,563,8,8,34,3,0,0,1,0,0,0,0,0,0,0,0,0
+10,7,desecho de vehículos eléctricos,1612,601,75,30,40,3,0,0,-1,0,0,0,0,0,0,0,0,0
+12,8,48,1800,914,10,8,0,3,0,0,-1,0,0,0,0,0,0,0,0,0
+1,9,11,8,4,0,0,22,0,0,0,-1--1--1,,1|(1713,914)|
+1,10,11,2,100,0,0,22,0,0,0,-1--1--1,,1|(1545,914)|
+11,11,0,1628,914,8,8,34,3,0,0,1,0,0,0,0,0,0,0,0,0
+10,12,desecho vehículos convencionales,1628,952,75,30,40,3,0,0,-1,0,0,0,0,0,0,0,0,0
+10,13,vehículos totales,1404,750,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,14,1,13,1,0,0,0,0,64,0,-1--1--1,,1|(1427,668)|
+1,15,2,13,1,0,0,0,0,64,0,-1--1--1,,1|(1426,834)|
+10,16,demanda de vehículos,1978,758,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,17,13,16,1,0,0,0,0,64,0,-1--1--1,,1|(1684,730)|
+1,18,7,16,1,0,0,0,0,64,0,-1--1--1,,1|(1812,651)|
+1,19,12,16,1,0,0,0,0,64,0,-1--1--1,,1|(1862,915)|
+10,20,Tiempo de vida vehículo,1672,678,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,21,20,7,1,0,0,0,0,64,0,-1--1--1,,1|(1652,626)|
+10,22,Tasa de crecimiendo vehículos,2054,927,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,23,22,16,1,0,0,0,0,64,0,-1--1--1,,1|(2036,843)|
+12,24,48,960,571,10,8,0,3,0,0,-1,0,0,0,0,0,0,0,0,0
+1,25,27,1,4,0,0,22,0,0,0,-1--1--1,,1|(1252,571)|
+1,26,27,24,100,0,0,22,0,0,0,-1--1--1,,1|(1058,571)|
+11,27,0,1154,571,8,8,34,3,0,0,1,0,0,0,0,0,0,0,0,0
+10,28,Venta de vehículos eléctricos,1154,609,75,30,40,3,0,0,-1,0,0,0,0,0,0,0,0,0
+12,29,48,908,935,10,8,0,3,0,0,-1,0,0,0,0,0,0,0,0,0
+1,30,32,2,4,0,0,22,0,0,0,-1--1--1,,1|(1230,935)|
+1,31,32,29,100,0,0,22,0,0,0,-1--1--1,,1|(1017,935)|
+11,32,0,1124,935,8,8,34,3,0,0,1,0,0,0,0,0,0,0,0,0
+10,33,venta de vehículos convencionales,1124,973,75,30,40,3,0,0,-1,0,0,0,0,0,0,0,0,0
+10,34,demanda de vehículos,1116,771,75,30,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+1,35,34,28,1,0,0,0,0,64,0,-1--1--1,,1|(1152,694)|
+1,36,34,33,1,0,0,0,0,64,0,-1--1--1,,1|(1138,854)|
+10,37,Atractividad relativa de vehículos eléctricos,762,663,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,38,37,28,1,0,0,0,0,64,0,-1--1--1,,1|(964,646)|
+10,39,Atractividad de vehículos convencionales,848,831,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,40,37,39,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+1,41,39,33,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+10,42,Precio vehículos convencionales,642,1042,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+10,43,Costos totales vehículos convencioanles,594,815,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,44,42,43,1,0,0,0,0,64,0,-1--1--1,,1|(580,939)|
+1,45,43,37,1,0,0,0,0,64,0,-1--1--1,,1|(648,714)|
+10,46,Precio vehículo eléctrico,896,406,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+10,47,Time,1074,242,75,30,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+1,48,47,46,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+10,49,Costos totales vehículos eléctricos,814,510,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,50,46,49,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+1,51,49,37,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+10,52,Costo de operación y mantenimiento vehículo eléctrico,544,347,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,53,52,49,1,0,0,0,0,64,0,-1--1--1,,1|(668,466)|
+10,54,km promedio por año por vehículo,402,174,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,55,54,52,1,0,0,0,0,64,0,-1--1--1,,1|(450,251)|
+10,56,Costo de cada km recorrido en un vehículo eléctrico,802,194,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+10,57,precio de electricidad,620,35,75,30,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+1,58,57,56,1,0,0,0,0,64,0,-1--1--1,,1|(684,107)|
+10,59,kWh requeridos en bateria,888,10,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,60,59,56,1,0,0,0,0,64,0,-1--1--1,,1|(866,94)|
+10,61,capacidad de km a recorrer con bateria,1036,119,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,62,61,56,1,0,0,0,0,64,0,-1--1--1,,1|(940,166)|
+10,63,Time,1288,51,75,30,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+1,64,63,61,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+1,65,56,52,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+10,66,Tiempo de vida vehículo,790,319,75,30,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+1,67,66,52,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+10,68,costo de vida de vehículo convencional,388,667,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,69,68,43,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+10,70,precio litro de gasolina,214,600,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+10,71,Costo de cada km recorrido en un vehículo convencional,346,823,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,72,70,71,1,0,0,0,0,64,0,-1--1--1,,1|(214,704)|
+10,73,Litros de gasolina necesarios para recorres 1 km,328,1022,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,74,73,71,1,0,0,0,0,64,0,-1--1--1,,1|(308,919)|
+10,75,km promedio por año por vehículo,1006,1179,75,30,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+10,76,Tiempo de vida vehículo,328,487,75,30,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+1,77,76,68,1,0,0,0,0,64,0,-1--1--1,,1|(314,567)|
+1,78,1,7,1,0,0,0,0,64,0,-1--1--1,,1|(1509,605)|
+1,79,2,12,1,0,0,0,0,64,0,-1--1--1,,1|(1516,966)|
+1,80,71,68,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+10,81,km promedio por año por vehículo,546,503,75,30,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+1,82,81,68,1,0,0,0,0,64,0,-1--1--1,,1|(482,582)|
+10,83,Estaciones de carga,2232,211,40,20,3,3,0,0,0,0,0,0,0,0,0,0,0,0
+12,84,48,1768,219,10,8,0,3,0,0,-1,0,0,0,0,0,0,0,0,0
+1,85,87,83,4,0,0,22,0,0,0,-1--1--1,,1|(2091,219)|
+1,86,87,84,100,0,0,22,0,0,0,-1--1--1,,1|(1876,219)|
+11,87,0,1982,219,8,8,34,3,0,0,1,0,0,0,0,0,0,0,0,0
+10,88,Crecimiento estaciones de carga,1982,257,75,30,40,3,0,0,-1,0,0,0,0,0,0,0,0,0
+1,89,83,88,1,0,0,0,0,64,0,-1--1--1,,1|(2114,187)|
+10,90,Estaciones de carga necesarias,1470,259,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,91,1,90,1,0,0,0,0,64,0,-1--1--1,,1|(1425,411)|
+10,92,Estaciones necesarias,1536,27,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,93,92,90,1,0,0,0,0,64,0,-1--1--1,,1|(1496,131)|
+1,94,90,88,1,0,0,0,0,64,0,-1--1--1,,1|(1720,295)|
+10,95,Estaciones de gasolina,2260,387,40,20,3,3,0,0,0,0,0,0,0,0,0,0,0,0
+10,96,Time,2300,962,75,30,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+1,97,96,22,1,0,0,0,0,64,0,-1--1--1,,1|(2204,927)|
+10,98,Conocimiento de la tecnología,2590,203,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+10,99,Time,2478,54,75,30,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+1,100,99,98,1,0,0,0,0,64,0,-1--1--1,,1|(2570,90)|
+10,101,Relacion estaciones de carga,2370,306,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,102,83,101,1,0,0,0,0,64,0,-1--1--1,,1|(2322,239)|
+1,103,95,101,1,0,0,0,0,64,0,-1--1--1,,1|(2336,358)|
+10,104,Relacion estaciones de carga,732,902,75,30,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+1,105,104,37,1,0,0,0,0,64,0,-1--1--1,,1|(734,787)|
+10,106,escenario publicidad,2778,210,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,107,99,106,1,0,0,0,0,64,0,-1--1--1,,1|(2638,58)|
+10,108,Escenario tecnologia,2894,383,33,19,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+10,109,Conocimiento,2662,387,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,110,98,109,1,0,0,0,0,64,0,-1--1--1,,1|(2592,290)|
+1,111,106,109,1,0,0,0,0,64,0,-1--1--1,,1|(2680,375)|
+1,112,108,109,1,0,0,0,0,64,0,-1--1--1,,1|(2792,415)|
+10,113,Conocimiento,946,538,75,30,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+1,114,113,37,1,0,0,0,0,64,0,-1--1--1,,1|(878,606)|
+10,115,Emisiones vehículos,656,1182,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,116,75,115,1,0,0,0,0,64,0,-1--1--1,,1|(822,1215)|
+10,117,Emision por litro,428,1282,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,118,2,115,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+10,119,Emision por km,214,1147,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,120,73,119,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+1,121,117,119,1,0,0,0,0,64,0,-1--1--1,,1|(304,1222)|
+1,122,119,115,1,0,0,0,0,64,0,-1--1--1,,1|(440,1155)|
+10,123,Electric Vehicles,1812,1163,32,19,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+10,124,Demanda electricidad vehiculos electricos,1448,1242,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,125,75,124,1,0,0,0,0,64,0,-1--1--1,,1|(1200,1242)|
+1,126,123,124,1,0,0,0,0,64,0,-1--1--1,,1|(1654,1226)|
+10,127,kWh requeridos en bateria,1920,1290,75,30,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+10,128,capacidad de km a recorrer con bateria,1242,1367,75,30,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+1,129,128,124,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
+1,130,127,124,1,0,0,0,0,64,0,-1--1--1,,1|(1692,1299)|
+10,131,Restriccion movilidad,2488,382,36,19,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+10,132,Restriccion movilidad,608,559,41,19,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+1,133,132,37,1,0,0,0,0,64,0,-1--1--1,,1|(670,606)|
+10,134,Impuesto de emisión,214,394,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,135,134,70,1,0,0,0,0,64,0,-1--1--1,,1|(194,486)|
+10,136,Incentivo vehículo electico,1164,410,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,137,136,49,1,0,0,0,0,64,0,-1--1--1,,1|(1012,482)|
+10,138,Tiempo de vida vehículo combustion,1652,816,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,139,138,12,1,0,0,0,0,64,0,-1--1--1,,1|(1652,870)|
+10,140,Escenario chatarrización,1844,790,75,30,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+1,141,140,138,1,0,0,0,0,64,0,-1--1--1,,1|(1754,774)|
+10,142,Escenarios,2954,580,75,30,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+1,143,142,108,1,0,0,0,0,64,0,-1--1--1,,1|(2968,478)|
+10,144,Escenarios,148,183,75,30,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+10,145,Escenarios,1282,244,75,30,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+\\\---/// Sketch information - do not modify anything except names
+V300  Do not put anything below this section - it will be ignored
+*View 4
+$192-192-192,0,Times New Roman|12||0-0-0|0-0-0|0-0-255|-1--1--1|-1--1--1|96,96,54,0
+10,1,CO2 Emissions,478,345,49,11,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+10,2,Emisiones sector electrico,290,202,75,30,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+1,3,2,1,1,0,0,0,0,64,0,-1--1--1,,1|(358,285)|
+10,4,Emisiones vehículos,682,219,75,30,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+1,5,4,1,1,0,0,0,0,64,0,-1--1--1,,1|(594,299)|
+10,6,Escenarios,1555,697,35,11,8,3,0,0,0,0,0,0,0,0,0,0,0,0
+///---\\\
+:L<%^E!@
+1:Scenario 4.vdfx
+1:Scenario 3.vdfx
+1:Scenario 2.vdfx
+1:Scenario 1.vdfx
+4:Time
+5:Household PV adopters
+9:Scenario 4
+19:85,0
+24:2024
+25:2050
+26:2050
+23:0
+15:0,0,0,0,0,0
+27:0,
+34:0,
+42:1
+72:0
+73:0
+35:Date
+36:YYYY-MM-DD
+37:2000
+38:1
+39:1
+40:0
+41:0
+95:0
+96:0
+97:0
+77:0
+78:0
+102:1
+93:0
+94:0
+92:0
+91:0
+90:0
+87:0
+75:
+43:
+103:8,8,8,3,8
+105:0,0,0,0,0,0,0,0,0,0
+104:Courier|12||0-0-0|0-0-0|-1--1--1|0-0-255|192-192-192|-1--1--1
